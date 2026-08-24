@@ -5,8 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCreateRoom, useJoinRoom, useQuickPlay } from "@workspace/api-client-react";
 import { useGame } from "@/lib/game-state";
-import { Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Clock3, Loader2, UsersRound } from "lucide-react";
 
 export default function Lobby() {
   const [, setLocation] = useLocation();
@@ -22,6 +21,8 @@ export default function Lobby() {
   const [createName, setCreateName] = useState("");
   const [createMode, setCreateMode] = useState<"classic" | "party">("classic");
   const [createDiff, setCreateDiff] = useState<"casual" | "competitive" | "hardcore">("casual");
+  const [turnTimerSeconds, setTurnTimerSeconds] = useState<8 | 12 | 20 | 30>(12);
+  const [maxPlayers, setMaxPlayers] = useState<2 | 4 | 6 | 8 | 10>(4);
   
   // Join Form State
   const [joinCode, setJoinCode] = useState("");
@@ -32,7 +33,15 @@ export default function Lobby() {
     if (!createName) return;
     
     createRoom.mutate(
-      { data: { displayName: createName, mode: createMode, difficulty: createDiff } },
+      {
+        data: {
+          displayName: createName,
+          mode: createMode,
+          difficulty: createDiff,
+          turnTimerSeconds,
+          maxPlayers,
+        },
+      },
       {
         onSuccess: (session) => {
           setSession({ code: session.code, playerId: session.playerId, sessionToken: session.sessionToken });
@@ -125,6 +134,47 @@ export default function Lobby() {
                     required
                     autoFocus
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground uppercase tracking-wider">
+                    <Clock3 className="h-3.5 w-3.5 text-primary" /> Turn timer
+                  </div>
+                  <div className="grid grid-cols-4 gap-2">
+                    {([8, 12, 20, 30] as const).map((seconds) => (
+                      <Button
+                        key={seconds}
+                        type="button"
+                        variant={turnTimerSeconds === seconds ? "default" : "outline"}
+                        onClick={() => setTurnTimerSeconds(seconds)}
+                        className="w-full px-1 text-xs"
+                      >
+                        {seconds}s
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground uppercase tracking-wider">
+                    <UsersRound className="h-3.5 w-3.5 text-primary" /> Player limit
+                  </div>
+                  <div className="grid grid-cols-5 gap-2">
+                    {([2, 4, 6, 8, 10] as const).map((count) => (
+                      <Button
+                        key={count}
+                        type="button"
+                        variant={maxPlayers === count ? "default" : "outline"}
+                        onClick={() => setMaxPlayers(count)}
+                        className="w-full px-1 text-xs"
+                      >
+                        {count}
+                      </Button>
+                    ))}
+                  </div>
+                  <p className="font-mono text-[10px] leading-relaxed text-muted-foreground">
+                    Choose the room size before sharing the code. The room locks when it reaches this limit.
+                  </p>
                 </div>
                 
                 <div className="space-y-2">

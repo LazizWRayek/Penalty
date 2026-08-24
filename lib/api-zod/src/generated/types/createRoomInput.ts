@@ -7,7 +7,9 @@
  */
 import type { CreateRoomInputDifficulty } from './createRoomInputDifficulty';
 import type { CreateRoomInputMatchLength } from './createRoomInputMatchLength';
+import type { CreateRoomInputMaxPlayers } from './createRoomInputMaxPlayers';
 import type { CreateRoomInputMode } from './createRoomInputMode';
+import type { CreateRoomInputTurnTimerSeconds } from './createRoomInputTurnTimerSeconds';
 
 export interface CreateRoomInput {
   /**
@@ -19,5 +21,7 @@ export interface CreateRoomInput {
   avatar?: string;
   mode?: CreateRoomInputMode;
   matchLength?: CreateRoomInputMatchLength;
+  turnTimerSeconds?: CreateRoomInputTurnTimerSeconds;
+  maxPlayers?: CreateRoomInputMaxPlayers;
   difficulty?: CreateRoomInputDifficulty;
 }

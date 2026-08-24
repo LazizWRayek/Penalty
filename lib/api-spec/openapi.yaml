@@ -45,6 +45,31 @@ paths:
                 $ref: "#/components/schemas/RoomSession"
         "400":
           description: Invalid room settings
+  /players:
+    get:
+      operationId: searchPlayers
+      tags: [players]
+      summary: Search the current football player roster
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 40
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: number
+            enum: [5, 8, 10]
+      responses:
+        "200":
+          description: Player suggestions and roster freshness
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlayerSearchResponse"
   /rooms/{code}:
     get:
       operationId: getRoom
@@ -137,6 +162,12 @@ components:
         matchLength:
           type: number
           enum: [3, 5, 7]
+        turnTimerSeconds:
+          type: number
+          enum: [8, 12, 20, 30]
+        maxPlayers:
+          type: number
+          enum: [2, 4, 6, 8, 10]
         difficulty:
           type: string
           enum: [casual, competitive, hardcore]
@@ -200,6 +231,10 @@ components:
           enum: [classic, party]
         matchLength:
           type: number
+        turnTimerSeconds:
+          type: number
+        maxPlayers:
+          type: number
         difficulty:
           type: string
           enum: [casual, competitive, hardcore]
@@ -207,7 +242,37 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PlayerSnapshot"
-      required: [code, hostId, status, mode, matchLength, difficulty, players]
+      required: [code, hostId, status, mode, matchLength, turnTimerSeconds, maxPlayers, difficulty, players]
+    PlayerSuggestion:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        imageUrl:
+          type: string
+        aliases:
+          type: array
+          items:
+            type: string
+      required: [id, name, imageUrl, aliases]
+    PlayerSearchResponse:
+      type: object
+      properties:
+        players:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlayerSuggestion"
+        updatedAt:
+          type: string
+          format: date-time
+        source:
+          type: string
+        freshness:
+          type: string
+          enum: [verified-snapshot, stale, unavailable]
+      required: [players, updatedAt, source, freshness]
     RoomSession:
       type: object
       properties:

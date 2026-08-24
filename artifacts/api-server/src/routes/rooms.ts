@@ -4,10 +4,24 @@ import {
   GetRoomParams,
   JoinRoomBody,
   QuickPlayBody,
+  SearchPlayersQueryParams,
 } from "@workspace/api-zod";
+import { searchFootballers } from "../lib/football";
 import { createRoom, getRoom, joinRoom } from "../lib/rooms";
 
 const router: IRouter = Router();
+
+router.get("/players", (req, res) => {
+  const parsed = SearchPlayersQueryParams.safeParse({
+    search: req.query.search,
+    limit: req.query.limit === undefined ? undefined : Number(req.query.limit),
+  });
+  if (!parsed.success) {
+    res.status(400).json({ error: "Player search options are invalid." });
+    return;
+  }
+  res.json(searchFootballers(parsed.data.search ?? "", parsed.data.limit ?? 8));
+});
 
 router.post("/rooms", (req, res) => {
   const parsed = CreateRoomBody.safeParse(req.body);

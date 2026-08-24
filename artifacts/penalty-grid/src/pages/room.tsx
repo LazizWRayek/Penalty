@@ -4,7 +4,7 @@ import { useGame } from "@/lib/game-state";
 import { useGetRoom, getGetRoomQueryKey } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, Users, Trophy, Flag, Shield, LogOut } from "lucide-react";
+import { Clock3, Flag, Loader2, LogOut, Shield, UsersRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function Room() {
@@ -113,9 +113,17 @@ export default function Room() {
                 <span className="text-muted-foreground text-xs font-mono uppercase">Difficulty</span>
                 <span className="text-white text-xs font-bold uppercase">{room.difficulty}</span>
               </div>
-              <div className="flex justify-between py-1">
+              <div className="flex justify-between py-1 border-b border-border/50">
                 <span className="text-muted-foreground text-xs font-mono uppercase">Length</span>
                 <span className="text-white text-xs font-bold uppercase">{room.matchLength} each</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-border/50">
+                <span className="flex items-center gap-1 text-muted-foreground text-xs font-mono uppercase"><Clock3 className="h-3 w-3" /> Turn</span>
+                <span className="text-white text-xs font-bold uppercase">{room.turnTimerSeconds}s</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="flex items-center gap-1 text-muted-foreground text-xs font-mono uppercase"><UsersRound className="h-3 w-3" /> Room</span>
+                <span className="text-white text-xs font-bold uppercase">{room.players.length}/{room.maxPlayers}</span>
               </div>
             </div>
           </div>

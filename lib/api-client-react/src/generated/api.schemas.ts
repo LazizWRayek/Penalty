@@ -26,6 +26,27 @@ export const CreateRoomInputMatchLength = {
   NUMBER_7: 7,
 } as const;
 
+export type CreateRoomInputTurnTimerSeconds = typeof CreateRoomInputTurnTimerSeconds[keyof typeof CreateRoomInputTurnTimerSeconds];
+
+
+export const CreateRoomInputTurnTimerSeconds = {
+  NUMBER_8: 8,
+  NUMBER_12: 12,
+  NUMBER_20: 20,
+  NUMBER_30: 30,
+} as const;
+
+export type CreateRoomInputMaxPlayers = typeof CreateRoomInputMaxPlayers[keyof typeof CreateRoomInputMaxPlayers];
+
+
+export const CreateRoomInputMaxPlayers = {
+  NUMBER_2: 2,
+  NUMBER_4: 4,
+  NUMBER_6: 6,
+  NUMBER_8: 8,
+  NUMBER_10: 10,
+} as const;
+
 export type CreateRoomInputDifficulty = typeof CreateRoomInputDifficulty[keyof typeof CreateRoomInputDifficulty];
 
 
@@ -45,6 +66,8 @@ export interface CreateRoomInput {
   avatar?: string;
   mode?: CreateRoomInputMode;
   matchLength?: CreateRoomInputMatchLength;
+  turnTimerSeconds?: CreateRoomInputTurnTimerSeconds;
+  maxPlayers?: CreateRoomInputMaxPlayers;
   difficulty?: CreateRoomInputDifficulty;
 }
 
@@ -119,8 +142,33 @@ export interface RoomSnapshot {
   status: RoomSnapshotStatus;
   mode: RoomSnapshotMode;
   matchLength: number;
+  turnTimerSeconds: number;
+  maxPlayers: number;
   difficulty: RoomSnapshotDifficulty;
   players: PlayerSnapshot[];
+}
+
+export interface PlayerSuggestion {
+  id: string;
+  name: string;
+  imageUrl: string;
+  aliases: string[];
+}
+
+export type PlayerSearchResponseFreshness = typeof PlayerSearchResponseFreshness[keyof typeof PlayerSearchResponseFreshness];
+
+
+export const PlayerSearchResponseFreshness = {
+  'verified-snapshot': 'verified-snapshot',
+  stale: 'stale',
+  unavailable: 'unavailable',
+} as const;
+
+export interface PlayerSearchResponse {
+  players: PlayerSuggestion[];
+  updatedAt: string;
+  source: string;
+  freshness: PlayerSearchResponseFreshness;
 }
 
 export interface RoomSession {
@@ -129,4 +177,21 @@ export interface RoomSession {
   sessionToken: string;
   room: RoomSnapshot;
 }
+
+export type SearchPlayersParams = {
+/**
+ * @maxLength 40
+ */
+search?: string;
+limit?: SearchPlayersLimit;
+};
+
+export type SearchPlayersLimit = typeof SearchPlayersLimit[keyof typeof SearchPlayersLimit];
+
+
+export const SearchPlayersLimit = {
+  NUMBER_5: 5,
+  NUMBER_8: 8,
+  NUMBER_10: 10,
+} as const;
 

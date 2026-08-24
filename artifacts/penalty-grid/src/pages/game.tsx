@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { Check, Goal, Loader2, Shield, Timer, X } from "lucide-react";
+import { Goal, Loader2, Shield, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { CriterionArt } from "@/components/criterion-art";
+import { PlayerSearch } from "@/components/player-search";
 import { useGame } from "@/lib/game-state";
 import { cn } from "@/lib/utils";
 
@@ -35,8 +36,8 @@ export default function Game() {
   const isKeeper = match?.keeperId === session?.playerId;
   const canChoose =
     match !== null &&
-    (match.phase === "shooting-select" || match.phase === "shooting-answer") &&
-    ((isShooter && match.shooterSquare === null) || isKeeper);
+    ((match.phase === "shooting-select" && isShooter && match.shooterSquare === null) ||
+      ((match.phase === "shooting-select" || match.phase === "shooting-answer") && isKeeper));
   const canAnswer =
     match !== null &&
     ((isShooter && match.phase === "shooting-answer") ||
@@ -148,43 +149,56 @@ export default function Game() {
               )}
             </div>
 
-            <div className="relative mx-auto aspect-[1.9/1] w-full max-w-4xl border-[8px] border-white shadow-[inset_0_0_70px_rgba(0,0,0,0.7),0_0_36px_rgba(255,255,255,0.14)]">
-              <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,.17)_1px,transparent_1px),linear-gradient(-45deg,rgba(255,255,255,.17)_1px,transparent_1px)] bg-[size:22px_22px] opacity-50" />
-              <div className="absolute -left-1 -right-1 -top-10 grid grid-cols-3 gap-2 px-1">
-                {match.grid.columns.map((criterion) => <div key={criterion.id} className="rounded-md bg-card/90 px-1 py-1 text-center font-mono text-[9px] font-bold uppercase text-primary md:text-xs">{criterion.label}</div>)}
-              </div>
-              <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 gap-1.5 p-1.5">
-                {Array.from({ length: 9 }, (_, square) => {
-                  const selectedByShooter = match.shooterSquare === square;
-                  const selectedByKeeper = match.keeperSquare === square;
-                  const reveal = match.phase === "result" || match.phase === "finished";
-                  return (
-                    <button
-                      key={square}
-                      aria-label={`Grid square ${square + 1}: ${match.grid.rows[Math.floor(square / 3)].label} and ${match.grid.columns[square % 3].label}`}
-                      disabled={!canChoose}
-                      onClick={() => chooseSquare(square)}
-                      className={cn(
-                        "group relative flex min-h-12 items-center justify-center border-2 border-white/15 bg-black/20 p-1 transition duration-200",
-                        canChoose && "cursor-crosshair hover:border-primary hover:bg-primary/10",
-                        selectedByShooter && !reveal && "border-primary bg-primary/20 shadow-[inset_0_0_24px_rgba(199,242,0,.55)]",
-                        selectedByKeeper && !reveal && isKeeper && "border-sky-300 bg-sky-300/10 shadow-[inset_0_0_24px_rgba(125,211,252,.4)]",
-                        reveal && selectedByShooter && selectedByKeeper && "border-sky-300 bg-sky-300/20",
-                        reveal && selectedByShooter && !selectedByKeeper && "border-primary bg-primary/20",
-                        reveal && selectedByKeeper && !selectedByShooter && "border-white/60 bg-white/10",
-                      )}
-                    >
-                      <span className="text-center font-mono text-[9px] font-bold leading-tight text-white/70 md:text-xs">
-                        {match.grid.rows[Math.floor(square / 3)].shortLabel} + {match.grid.columns[square % 3].shortLabel}
-                      </span>
-                      {reveal && selectedByShooter && <span className="absolute bottom-1 right-1"><Goal className="h-4 w-4 text-primary" /></span>}
-                      {reveal && selectedByKeeper && <span className="absolute left-1 top-1"><Shield className="h-4 w-4 text-sky-300" /></span>}
-                    </button>
-                  );
-                })}
-              </div>
-              <div className="absolute -left-10 top-0 grid h-full grid-rows-3 gap-1.5 py-1.5">
-                {match.grid.rows.map((criterion) => <div key={criterion.id} className="flex -rotate-90 items-center justify-center whitespace-nowrap font-mono text-[8px] font-bold uppercase text-white/60 md:text-[10px]">{criterion.label}</div>)}
+            <div className="relative mx-auto w-full max-w-5xl">
+              <div className="absolute -top-3 left-1/2 h-4 w-[78%] -translate-x-1/2 rounded-t-[100%] border-x-4 border-t-4 border-white/70 opacity-60" />
+              <div className="relative aspect-[1.65/1] min-h-[15rem] overflow-hidden border-[5px] border-white bg-[#07130d] shadow-[inset_0_0_70px_rgba(0,0,0,.72),0_0_36px_rgba(255,255,255,0.14)] sm:aspect-[2.25/1] sm:min-h-0 lg:aspect-[3/1] lg:border-[8px]">
+                <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,.15)_1px,transparent_1px),linear-gradient(-45deg,rgba(255,255,255,.15)_1px,transparent_1px)] bg-[size:18px_18px] opacity-50" />
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(199,242,0,.12),transparent_62%)]" />
+                <div className="relative grid h-full grid-cols-[minmax(3.35rem,.72fr)_repeat(3,minmax(0,1fr))] grid-rows-[minmax(2.75rem,.52fr)_repeat(3,minmax(0,1fr))] gap-1 p-1.5 sm:gap-2 sm:p-2.5">
+                  <div aria-hidden="true" className="rounded border border-white/10 bg-black/30" />
+                  {match.grid.columns.map((criterion) => (
+                    <div key={criterion.id} className="flex min-w-0 flex-col items-center justify-center rounded border border-primary/25 bg-card/85 px-1 text-center">
+                      <CriterionArt id={criterion.id} className="mb-0.5 h-3.5 w-3.5 text-primary sm:h-4 sm:w-4" />
+                      <span className="line-clamp-2 font-mono text-[8px] font-bold uppercase leading-tight text-primary sm:text-[10px]">{criterion.label}</span>
+                    </div>
+                  ))}
+                  {match.grid.rows.flatMap((row, rowIndex) => [
+                    <div key={`${row.id}-label`} className="flex min-w-0 flex-col items-center justify-center rounded border border-white/15 bg-black/35 px-1 text-center">
+                      <CriterionArt id={row.id} className="mb-0.5 h-3.5 w-3.5 text-white/80 sm:h-4 sm:w-4" />
+                      <span className="line-clamp-2 font-mono text-[8px] font-bold uppercase leading-tight text-white/80 sm:text-[10px]">{row.label}</span>
+                    </div>,
+                    ...match.grid.columns.map((column, columnIndex) => {
+                      const square = rowIndex * 3 + columnIndex;
+                      const selectedByShooter = match.shooterSquare === square;
+                      const selectedByKeeper = match.keeperSquare === square;
+                      const reveal = match.phase === "result" || match.phase === "finished";
+                      return (
+                        <button
+                          key={square}
+                          aria-label={`Grid square ${square + 1}: ${row.label} and ${column.label}`}
+                          disabled={!canChoose}
+                          onClick={() => chooseSquare(square)}
+                          className={cn(
+                            "group relative flex min-h-0 items-center justify-center overflow-hidden border-2 border-white/15 bg-black/25 p-1 transition duration-200",
+                            canChoose && "cursor-crosshair hover:border-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                            selectedByShooter && !reveal && "border-primary bg-primary/20 shadow-[inset_0_0_24px_rgba(199,242,0,.55)]",
+                            selectedByKeeper && !reveal && isKeeper && "border-sky-300 bg-sky-300/10 shadow-[inset_0_0_24px_rgba(125,211,252,.4)]",
+                            reveal && selectedByShooter && selectedByKeeper && "border-sky-300 bg-sky-300/20",
+                            reveal && selectedByShooter && !selectedByKeeper && "border-primary bg-primary/20",
+                            reveal && selectedByKeeper && !selectedByShooter && "border-white/60 bg-white/10",
+                          )}
+                        >
+                          <span aria-hidden="true" className="flex items-center gap-1 text-white/75">
+                            <CriterionArt id={row.id} className="h-3 w-3" />
+                            <CriterionArt id={column.id} className="h-3 w-3 text-primary" />
+                          </span>
+                          {reveal && selectedByShooter && <span className="absolute bottom-1 right-1"><Goal className="h-3.5 w-3.5 text-primary sm:h-4 sm:w-4" /></span>}
+                          {reveal && selectedByKeeper && <span className="absolute left-1 top-1"><Shield className="h-3.5 w-3.5 text-sky-300 sm:h-4 sm:w-4" /></span>}
+                        </button>
+                      );
+                    }),
+                  ])}
+                </div>
               </div>
             </div>
           </div>
@@ -194,8 +208,8 @@ export default function Game() {
               <div className="mb-5">
                 <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Selected criteria</p>
                 <div className="flex flex-wrap gap-2">
-                  <span className="rounded bg-primary px-2 py-1 font-mono text-xs font-bold text-primary-foreground">{selectedCriteria.row.label}</span>
-                  <span className="rounded border border-primary/40 px-2 py-1 font-mono text-xs font-bold text-primary">{selectedCriteria.column.label}</span>
+                  <span className="flex items-center gap-1 rounded bg-primary px-2 py-1 font-mono text-xs font-bold text-primary-foreground"><CriterionArt id={selectedCriteria.row.id} className="h-3.5 w-3.5" />{selectedCriteria.row.label}</span>
+                  <span className="flex items-center gap-1 rounded border border-primary/40 px-2 py-1 font-mono text-xs font-bold text-primary"><CriterionArt id={selectedCriteria.column.id} className="h-3.5 w-3.5" />{selectedCriteria.column.label}</span>
                 </div>
               </div>
             )}
@@ -204,7 +218,7 @@ export default function Game() {
                 <label className="font-mono text-[10px] uppercase tracking-[0.18em] text-primary">
                   {isKeeper ? "Different footballer for the save" : "Name the footballer"}
                 </label>
-                <Input value={answer} onChange={(event) => setAnswer(event.target.value)} onKeyDown={(event) => event.key === "Enter" && submitAnswer()} placeholder={isKeeper ? "ANOTHER VALID PLAYER" : "TYPE A PLAYER NAME"} className="h-12 font-display text-base" />
+                <PlayerSearch value={answer} onChange={setAnswer} onChoose={setAnswer} />
                 <Button size="lg" className="w-full" disabled={!answer.trim()} onClick={submitAnswer}>SUBMIT ANSWER</Button>
               </div>
             ) : match.phase === "result" ? (
@@ -217,7 +231,7 @@ export default function Game() {
             ) : (
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-muted-foreground"><Shield className="h-4 w-4 text-primary" /><span className="font-mono text-xs uppercase">Server-authoritative match</span></div>
-                <p className="font-mono text-[11px] leading-relaxed text-muted-foreground">Selections remain hidden until the reveal. The database validates every answer.</p>
+                <p className="font-mono text-[11px] leading-relaxed text-muted-foreground">Selections remain hidden until the reveal. The server validates every answer against the displayed roster snapshot.</p>
                 {error && <p className="rounded border border-destructive/40 bg-destructive/10 p-2 font-mono text-[10px] text-destructive">{error}</p>}
               </div>
             )}

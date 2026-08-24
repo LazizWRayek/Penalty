@@ -15,6 +15,11 @@ export type Footballer = {
   trophies: string[];
 };
 
+export type FootballDataFreshness = "verified-snapshot" | "stale" | "unavailable";
+
+export const FOOTBALL_DATA_UPDATED_AT = "2026-08-24T00:00:00.000Z";
+const FOOTBALL_DATA_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30;
+
 export type Criterion = {
   id: CriterionId;
   label: string;
@@ -227,6 +232,47 @@ const normalize = (value: string) =>
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]/g, "");
+
+export function footballDataFreshness(now = Date.now()): FootballDataFreshness {
+  const age = now - Date.parse(FOOTBALL_DATA_UPDATED_AT);
+  return age >= 0 && age <= FOOTBALL_DATA_MAX_AGE_MS
+    ? "verified-snapshot"
+    : "stale";
+}
+
+function playerImageUrl(name: string) {
+  return `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundType=gradientLinear&backgroundColor=0b1f16,c7f200`;
+}
+
+export function searchFootballers(search = "", limit = 8) {
+  const query = normalize(search);
+  const players = FOOTBALLERS
+    .map((player) => {
+      const normalizedName = normalize(player.name);
+      const normalizedAliases = player.aliases.map(normalize);
+      const exact = normalizedName === query || normalizedAliases.includes(query);
+      const startsWith =
+        normalizedName.startsWith(query) ||
+        normalizedAliases.some((alias) => alias.startsWith(query));
+      return { player, score: exact ? 0 : startsWith ? 1 : 2 };
+    })
+    .filter(({ score }) => !query || score < 2)
+    .sort((a, b) => a.score - b.score || a.player.name.localeCompare(b.player.name))
+    .slice(0, Math.min(Math.max(limit, 1), 10))
+    .map(({ player }) => ({
+      id: normalize(player.name),
+      name: player.name,
+      imageUrl: playerImageUrl(player.name),
+      aliases: player.aliases,
+    }));
+
+  return {
+    players,
+    updatedAt: FOOTBALL_DATA_UPDATED_AT,
+    source: "Penalty Grid verified roster snapshot",
+    freshness: footballDataFreshness(),
+  };
+}
 
 export function resolveFootballer(answer: string): Footballer | null {
   const normalized = normalize(answer);

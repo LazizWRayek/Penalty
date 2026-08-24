@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   FOOTBALLERS,
+  FOOTBALL_DATA_UPDATED_AT,
+  footballDataFreshness,
   resolveFootballer,
+  searchFootballers,
   satisfies,
   validateAnswer,
 } from "./football";
@@ -39,5 +42,21 @@ describe("football answer validation", () => {
 
   it("does not resolve unsupported names", () => {
     expect(resolveFootballer("Not A Footballer")).toBeNull();
+  });
+
+  it("returns player suggestions with image data and freshness metadata", () => {
+    const result = searchFootballers("cr", 5);
+    expect(result.players[0]).toMatchObject({
+      id: "cristianoronaldo",
+      name: "Cristiano Ronaldo",
+      aliases: expect.arrayContaining(["cr7"]),
+    });
+    expect(result.players[0]?.imageUrl).toContain("dicebear.com");
+    expect(result.freshness).toBe("verified-snapshot");
+  });
+
+  it("labels an out-of-date roster snapshot as stale", () => {
+    const staleDate = Date.parse(FOOTBALL_DATA_UPDATED_AT) + 31 * 24 * 60 * 60 * 1000;
+    expect(footballDataFreshness(staleDate)).toBe("stale");
   });
 });

@@ -1,1 +1,2 @@
 - [Realtime game rooms](realtime-game-rooms.md) — Rooms are intentionally server-authoritative and in memory for the first playable release.
+- [Zod codegen compatibility](zod-codegen-compatibility.md) — Avoid OpenAPI formats that generate unsupported Zod APIs in this workspace.

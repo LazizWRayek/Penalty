@@ -31,6 +31,8 @@ export const CreateRoomBody = zod.object({
   "avatar": zod.string().max(createRoomBodyAvatarMax).optional(),
   "mode": zod.enum(['classic', 'party']).optional(),
   "matchLength": zod.union([zod.literal(3),zod.literal(5),zod.literal(7)]).optional(),
+  "turnTimerSeconds": zod.union([zod.literal(8),zod.literal(12),zod.literal(20),zod.literal(30)]).optional(),
+  "maxPlayers": zod.union([zod.literal(2),zod.literal(4),zod.literal(6),zod.literal(8),zod.literal(10)]).optional(),
   "difficulty": zod.enum(['casual', 'competitive', 'hardcore']).optional()
 })
 
@@ -44,6 +46,8 @@ export const CreateRoomResponse = zod.object({
   "status": zod.enum(['lobby', 'playing', 'finished']),
   "mode": zod.enum(['classic', 'party']),
   "matchLength": zod.number(),
+  "turnTimerSeconds": zod.number(),
+  "maxPlayers": zod.number(),
   "difficulty": zod.enum(['casual', 'competitive', 'hardcore']),
   "players": zod.array(zod.object({
   "id": zod.string(),
@@ -55,6 +59,31 @@ export const CreateRoomResponse = zod.object({
   "score": zod.number()
 }))
 })
+})
+
+
+/**
+ * @summary Search the current football player roster
+ */
+export const searchPlayersQuerySearchMax = 40;
+
+
+
+export const SearchPlayersQueryParams = zod.object({
+  "search": zod.coerce.string().max(searchPlayersQuerySearchMax).optional(),
+  "limit": zod.union([zod.literal(5),zod.literal(8),zod.literal(10)]).optional()
+})
+
+export const SearchPlayersResponse = zod.object({
+  "players": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "imageUrl": zod.string(),
+  "aliases": zod.array(zod.string())
+})),
+  "updatedAt": zod.coerce.date(),
+  "source": zod.string(),
+  "freshness": zod.enum(['verified-snapshot', 'stale', 'unavailable'])
 })
 
 
@@ -74,6 +103,8 @@ export const GetRoomResponse = zod.object({
   "status": zod.enum(['lobby', 'playing', 'finished']),
   "mode": zod.enum(['classic', 'party']),
   "matchLength": zod.number(),
+  "turnTimerSeconds": zod.number(),
+  "maxPlayers": zod.number(),
   "difficulty": zod.enum(['casual', 'competitive', 'hardcore']),
   "players": zod.array(zod.object({
   "id": zod.string(),
@@ -119,6 +150,8 @@ export const JoinRoomResponse = zod.object({
   "status": zod.enum(['lobby', 'playing', 'finished']),
   "mode": zod.enum(['classic', 'party']),
   "matchLength": zod.number(),
+  "turnTimerSeconds": zod.number(),
+  "maxPlayers": zod.number(),
   "difficulty": zod.enum(['casual', 'competitive', 'hardcore']),
   "players": zod.array(zod.object({
   "id": zod.string(),
@@ -158,6 +191,8 @@ export const QuickPlayResponse = zod.object({
   "status": zod.enum(['lobby', 'playing', 'finished']),
   "mode": zod.enum(['classic', 'party']),
   "matchLength": zod.number(),
+  "turnTimerSeconds": zod.number(),
+  "maxPlayers": zod.number(),
   "difficulty": zod.enum(['casual', 'competitive', 'hardcore']),
   "players": zod.array(zod.object({
   "id": zod.string(),

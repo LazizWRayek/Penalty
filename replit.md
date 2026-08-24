@@ -4,19 +4,16 @@ Penalty Grid is a real-time football party game where friends use player knowled
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm --filter @workspace/api-server run dev` — run the API server (port 8080)
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
 
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
 - API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
+- Validation: Zod 3 and generated request schemas
 - API codegen: Orval (from OpenAPI spec)
 - Build: esbuild (CJS bundle)
 
@@ -31,13 +28,15 @@ Penalty Grid is a real-time football party game where friends use player knowled
 
 - The API server owns the match state and only reveals player selections when rules allow it.
 - Private rooms use short codes and reconnectable browser sessions; the first release intentionally keeps active rooms in memory.
+- Football validation uses a versioned roster snapshot and reports its freshness rather than claiming unverified live data.
 
 ## Product
 
 - Create or join private rooms with a short code.
 - Ready up, start a match, choose a target, predict the shot, and answer football-player criteria.
 - Server validation supports aliases and prevents the goalkeeper reusing the shooter’s answer.
-- Scores, timers, reveals, sudden death, reconnecting state, and rematches are synchronized live.
+- Scores, timers, player-cap rules, reveals, sudden death, reconnecting state, and rematches are synchronized live.
+- Player search suggests roster entries with visual profile graphics and a displayed roster freshness date.
 
 ## User preferences
 

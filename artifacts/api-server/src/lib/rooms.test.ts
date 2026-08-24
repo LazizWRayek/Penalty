@@ -7,6 +7,7 @@ import {
   createRoom,
   getRoom,
   joinRoom,
+  processRoomTimers,
 } from "./rooms";
 
 type Session = ReturnType<typeof createRoom>;
@@ -19,6 +20,7 @@ type State = {
     resultReason: string | null;
     shooterSquare: number | null;
     keeperSquare: number | null;
+    deadline: number | null;
   } | null;
 };
 
@@ -94,7 +96,11 @@ describe("authoritative room lifecycle", () => {
   });
 
   it("creates private rooms, joins players, and assigns opposing teams", () => {
-    const host = createRoom({ displayName: "  Alex   Host  " });
+    const host = createRoom({
+      displayName: "  Alex   Host  ",
+      turnTimerSeconds: 20,
+      maxPlayers: 2,
+    });
     const guest = joinRoom(host.code.toLowerCase(), { displayName: "Guest" });
     expect(guest).not.toBeNull();
 
@@ -106,6 +112,9 @@ describe("authoritative room lifecycle", () => {
       "Guest",
     ]);
     expect(room?.players.map((player) => player.team)).toEqual(["home", "away"]);
+    expect(room?.turnTimerSeconds).toBe(20);
+    expect(room?.maxPlayers).toBe(2);
+    expect(joinRoom(host.code, { displayName: "Late Guest" })).toBeNull();
   });
 
   it("keeps hidden picks private until the result", async () => {
@@ -178,6 +187,55 @@ describe("authoritative room lifecycle", () => {
     expect(result.game?.result).toBe("goal");
     expect(result.room?.players.find((player) => player.displayName === "Shooter")?.score).toBe(1);
 
+    shooter.close();
+    keeper.close();
+  });
+
+  it("uses the configured timer and expires a stalled penalty", async () => {
+    const host = createRoom({
+      displayName: "Shooter",
+      turnTimerSeconds: 8,
+      maxPlayers: 2,
+    });
+    const guest = joinRoom(host.code, { displayName: "Keeper" });
+    if (!guest) throw new Error("Guest could not join test room");
+    const shooter = new SocketHarness(port, host);
+    const keeper = new SocketHarness(port, guest);
+    await Promise.all([shooter.ready(), keeper.ready()]);
+
+    shooter.send({ type: "start" });
+    const started = await shooter.waitFor(
+      (state) => state.game?.phase === "shooting-select",
+    );
+    expect(started.game?.deadline).toBeGreaterThan(Date.now() + 7_000);
+    processRoomTimers((started.game?.deadline ?? 0) + 1);
+    const result = await shooter.waitFor((state) => state.game?.phase === "result");
+
+    expect(result.game?.result).toBe("miss");
+    expect(result.game?.resultReason).toContain("Time expired");
+    shooter.close();
+    keeper.close();
+  });
+
+  it("rejects a move that arrives after the deadline before the timer sweep", async () => {
+    const host = createRoom({
+      displayName: "Shooter",
+      turnTimerSeconds: 0,
+      maxPlayers: 2,
+    });
+    const guest = joinRoom(host.code, { displayName: "Keeper" });
+    if (!guest) throw new Error("Guest could not join test room");
+    const shooter = new SocketHarness(port, host);
+    const keeper = new SocketHarness(port, guest);
+    await Promise.all([shooter.ready(), keeper.ready()]);
+
+    shooter.send({ type: "start" });
+    await shooter.waitFor((state) => state.game?.phase === "shooting-select");
+    shooter.send({ type: "select_square", square: 0 });
+    const result = await shooter.waitFor((state) => state.game?.phase === "result");
+
+    expect(result.game?.result).toBe("miss");
+    expect(result.game?.resultReason).toContain("Time expired");
     shooter.close();
     keeper.close();
   });

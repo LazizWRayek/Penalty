@@ -68,6 +68,8 @@ type Room = {
   status: "lobby" | "playing" | "finished";
   mode: RoomMode;
   matchLength: number;
+  turnTimerSeconds: number;
+  maxPlayers: number;
   difficulty: Difficulty;
   players: Map<string, Player>;
   sockets: Map<string, WebSocket>;
@@ -133,6 +135,8 @@ function roomSnapshot(room: Room) {
     status: room.status,
     mode: room.mode,
     matchLength: room.matchLength,
+    turnTimerSeconds: room.turnTimerSeconds,
+    maxPlayers: room.maxPlayers,
     difficulty: room.difficulty,
     players: [...room.players.values()].map((player) => ({
       id: player.id,
@@ -236,7 +240,7 @@ function beginPenalty(room: Room) {
     keeperAnswer: null,
     result: null,
     resultReason: null,
-    deadline: Date.now() + 12_000,
+    deadline: Date.now() + room.turnTimerSeconds * 1_000,
     penaltyHistory: previous?.penaltyHistory ?? [],
   };
   broadcast(room);
@@ -300,6 +304,26 @@ function finishResult(room: Room, result: "goal" | "save" | "miss", reason: stri
   }, 4_500);
 }
 
+function expireIfPastDeadline(room: Room, now = Date.now()) {
+  const game = room.game;
+  if (
+    room.status !== "playing" ||
+    !game?.deadline ||
+    now < game.deadline ||
+    (game.phase !== "shooting-select" &&
+      game.phase !== "shooting-answer" &&
+      game.phase !== "save-challenge")
+  ) {
+    return false;
+  }
+  if (game.phase === "save-challenge") {
+    finishResult(room, "goal", "The save challenge timed out.");
+  } else {
+    finishResult(room, "miss", "Time expired. No shot taken.");
+  }
+  return true;
+}
+
 function startRoom(room: Room) {
   if (room.status !== "lobby" || room.players.size < 2) return;
   room.status = "playing";
@@ -312,6 +336,16 @@ function handleCommand(room: Room, playerId: string, raw: unknown) {
   const game = room.game;
   const player = room.players.get(playerId);
   if (!player) return;
+
+  if (
+    game &&
+    (message.type === "select_square" ||
+      message.type === "keeper_select" ||
+      message.type === "submit_answer") &&
+    expireIfPastDeadline(room)
+  ) {
+    return;
+  }
 
   if (message.type === "ready" && room.status === "lobby") {
     player.ready = !player.ready;
@@ -329,7 +363,7 @@ function handleCommand(room: Room, playerId: string, raw: unknown) {
       if (playerId === game.shooterId) {
         game.shooterSquare = square;
         game.phase = "shooting-answer";
-        game.deadline = Date.now() + 12_000;
+        game.deadline = Date.now() + room.turnTimerSeconds * 1_000;
       } else if (playerId === game.keeperId) {
         game.keeperSquare = square;
       }
@@ -358,7 +392,7 @@ function handleCommand(room: Room, playerId: string, raw: unknown) {
       }
       if (game.keeperSquare !== null && game.keeperSquare === game.shooterSquare) {
         game.phase = "save-challenge";
-        game.deadline = Date.now() + 10_000;
+        game.deadline = Date.now() + room.turnTimerSeconds * 1_000;
         game.resultReason = "Correct dive. Keeper, name a different player.";
         broadcast(room);
         return;
@@ -399,6 +433,8 @@ export function createRoom(options: {
   avatar?: string;
   mode?: RoomMode;
   matchLength?: number;
+  turnTimerSeconds?: number;
+  maxPlayers?: number;
   difficulty?: Difficulty;
 }) {
   const code = roomCode();
@@ -424,6 +460,8 @@ export function createRoom(options: {
     status: "lobby",
     mode: options.mode ?? "classic",
     matchLength: options.matchLength ?? 5,
+    turnTimerSeconds: options.turnTimerSeconds ?? 12,
+    maxPlayers: options.maxPlayers ?? 4,
     difficulty: options.difficulty ?? "casual",
     players: new Map([[playerId, player]]),
     sockets: new Map(),
@@ -437,7 +475,7 @@ export function createRoom(options: {
 export function joinRoom(code: string, options: { displayName: string; avatar?: string }) {
   const room = rooms.get(code.toUpperCase());
   if (!room) return null;
-  if (room.status !== "lobby" || room.players.size >= 10) return null;
+  if (room.status !== "lobby" || room.players.size >= room.maxPlayers) return null;
   const player: Player = {
     id: id("player"),
     sessionToken: id("session"),
@@ -471,6 +509,15 @@ function sessionFor(room: Room, player: Player) {
 export function getRoom(code: string) {
   const room = rooms.get(code.toUpperCase());
   return room ? roomSnapshot(room) : null;
+}
+
+export function processRoomTimers(now = Date.now()) {
+  for (const room of rooms.values()) {
+    expireIfPastDeadline(room, now);
+    if (now - room.createdAt > 1000 * 60 * 60 * 8 && room.status === "lobby") {
+      rooms.delete(room.code);
+    }
+  }
 }
 
 export function attachRealtime(server: HttpServer) {
@@ -521,21 +568,7 @@ export function attachRealtime(server: HttpServer) {
     });
   });
 
-  const expiryTimer = setInterval(() => {
-    for (const room of rooms.values()) {
-      if (room.status === "playing" && room.game?.deadline && Date.now() > room.game.deadline) {
-        const game = room.game;
-        if (game.phase === "shooting-select" || game.phase === "shooting-answer") {
-          finishResult(room, "miss", "Time expired. No shot taken.");
-        } else if (game.phase === "save-challenge") {
-          finishResult(room, "goal", "The save challenge timed out.");
-        }
-      }
-      if (Date.now() - room.createdAt > 1000 * 60 * 60 * 8 && room.status === "lobby") {
-        rooms.delete(room.code);
-      }
-    }
-  }, 500);
+  const expiryTimer = setInterval(() => processRoomTimers(), 500);
 
   return () => {
     clearInterval(expiryTimer);

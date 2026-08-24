@@ -16,6 +16,8 @@ export interface RoomSnapshot {
   status: RoomSnapshotStatus;
   mode: RoomSnapshotMode;
   matchLength: number;
+  turnTimerSeconds: number;
+  maxPlayers: number;
   difficulty: RoomSnapshotDifficulty;
   players: PlayerSnapshot[];
 }

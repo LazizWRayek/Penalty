@@ -23,9 +23,11 @@ import type {
   CreateRoomInput,
   HealthStatus,
   JoinRoomInput,
+  PlayerSearchResponse,
   QuickPlayInput,
   RoomSession,
-  RoomSnapshot
+  RoomSnapshot,
+  SearchPlayersParams
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -202,6 +204,90 @@ export const useCreateRoom = <TError = ErrorType<void>,
       > => {
       return useMutation(getCreateRoomMutationOptions(options));
     }
+
+export const getSearchPlayersUrl = (params?: SearchPlayersParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/players?${stringifiedParams}` : `/api/players`
+}
+
+/**
+ * @summary Search the current football player roster
+ */
+export const searchPlayers = async (params?: SearchPlayersParams, options?: Parameters<typeof customFetch>[1]): Promise<PlayerSearchResponse> => {
+
+  return customFetch<PlayerSearchResponse>(getSearchPlayersUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getSearchPlayersQueryKey = (params?: SearchPlayersParams,) => {
+    return [
+    `/api/players`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getSearchPlayersQueryOptions = <TData = Awaited<ReturnType<typeof searchPlayers>>, TError = ErrorType<unknown>>(params?: SearchPlayersParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchPlayers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getSearchPlayersQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof searchPlayers>>> = ({ signal }) => searchPlayers(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof searchPlayers>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type SearchPlayersQueryResult = NonNullable<Awaited<ReturnType<typeof searchPlayers>>>
+export type SearchPlayersQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Search the current football player roster
+ */
+
+export function useSearchPlayers<TData = Awaited<ReturnType<typeof searchPlayers>>, TError = ErrorType<unknown>>(
+ params?: SearchPlayersParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchPlayers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getSearchPlayersQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetRoomUrl = (code: string,) => {
 
