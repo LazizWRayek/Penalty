@@ -83,7 +83,7 @@ export const SearchPlayersResponse = zod.object({
 })),
   "updatedAt": zod.coerce.date(),
   "source": zod.string(),
-  "freshness": zod.enum(['verified-snapshot', 'stale', 'unavailable'])
+  "freshness": zod.enum(['live', 'verified-snapshot', 'stale', 'unavailable'])
 })
 
 

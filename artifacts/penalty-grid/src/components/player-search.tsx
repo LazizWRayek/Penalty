@@ -59,9 +59,16 @@ export function PlayerSearch({
       month: "short",
       year: "numeric",
     }).format(new Date(query.data.updatedAt));
-    return query.data.freshness === "verified-snapshot"
-      ? `Verified roster snapshot · ${date}`
-      : `Roster needs refresh · ${date}`;
+    if (query.data.freshness === "live") {
+      return `Live ${query.data.source} data · ${date}`;
+    }
+    if (query.data.freshness === "verified-snapshot") {
+      return `Verified fallback snapshot · ${date}`;
+    }
+    if (query.data.freshness === "unavailable") {
+      return `Live source unavailable · using verified data from ${date}`;
+    }
+    return `Roster needs refresh · ${date}`;
   }, [query.data]);
 
   useEffect(() => {

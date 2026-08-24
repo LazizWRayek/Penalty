@@ -13,12 +13,14 @@ export type Footballer = {
   clubs: string[];
   leagues: string[];
   trophies: string[];
+  imageUrl?: string;
 };
 
-export type FootballDataFreshness = "verified-snapshot" | "stale" | "unavailable";
+export type FootballDataFreshness = "live" | "verified-snapshot" | "stale" | "unavailable";
 
 export const FOOTBALL_DATA_UPDATED_AT = "2026-08-24T00:00:00.000Z";
 const FOOTBALL_DATA_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30;
+const LIVE_DATA_MAX_AGE_MS = 1000 * 60 * 60 * 24;
 
 export type Criterion = {
   id: CriterionId;
@@ -226,7 +228,7 @@ export const CRITERIA: Record<CriterionId, Criterion> = {
   "serie-a": { id: "serie-a", label: "Serie A", shortLabel: "SA" },
 };
 
-const normalize = (value: string) =>
+export const normalize = (value: string) =>
   value
     .toLowerCase()
     .normalize("NFD")
@@ -244,9 +246,109 @@ function playerImageUrl(name: string) {
   return `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundType=gradientLinear&backgroundColor=0b1f16,c7f200`;
 }
 
+type FootballDataState = {
+  updatedAt: string;
+  source: string;
+  freshness: FootballDataFreshness;
+  lastCheckedAt: string | null;
+  error: string | null;
+};
+
+let activeFootballers = FOOTBALLERS;
+let dataState: FootballDataState = {
+  updatedAt: FOOTBALL_DATA_UPDATED_AT,
+  source: "Penalty Grid verified roster snapshot",
+  freshness: footballDataFreshness(),
+  lastCheckedAt: null,
+  error: null,
+};
+const liveSearchCache = new Map<string, { expiresAt: number; players: Footballer[] }>();
+
+export function getFootballDataState() {
+  const age = Date.now() - Date.parse(dataState.updatedAt);
+  const threshold = dataState.freshness === "live"
+    ? LIVE_DATA_MAX_AGE_MS
+    : FOOTBALL_DATA_MAX_AGE_MS;
+  const freshness = dataState.freshness === "unavailable"
+    ? "unavailable"
+    : age > threshold
+      ? "stale"
+      : dataState.freshness;
+  return { ...dataState, freshness };
+}
+
+export function getFootballerCount() {
+  return activeFootballers.length;
+}
+
+export async function refreshFootballData() {
+  const { refreshFootballers } = await import("./football-provider");
+  const checkedAt = new Date().toISOString();
+  try {
+    const result = await refreshFootballers(FOOTBALLERS);
+    activeFootballers = result.players;
+    dataState = {
+      updatedAt: result.updatedAt,
+      source: result.provider,
+      freshness: "live",
+      lastCheckedAt: checkedAt,
+      error: null,
+    };
+    return getFootballDataState();
+  } catch (error) {
+    dataState = {
+      ...dataState,
+      source: "API-Football unavailable; using verified roster snapshot",
+      freshness: "unavailable",
+      lastCheckedAt: checkedAt,
+      error: error instanceof Error ? error.message : "Live roster refresh failed.",
+    };
+    return getFootballDataState();
+  }
+}
+
+export async function searchLiveFootballData(search: string, limit: number) {
+  const query = normalize(search);
+  if (!query || !process.env.API_FOOTBALL_API_KEY) return null;
+  const cached = liveSearchCache.get(query);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.players.slice(0, limit);
+  }
+
+  try {
+    const { searchLiveFootballers } = await import("./football-provider");
+    const players = await searchLiveFootballers(search);
+    liveSearchCache.set(query, {
+      expiresAt: Date.now() + 60_000,
+      players,
+    });
+    for (const player of players) {
+      const existing = activeFootballers.findIndex(
+        (candidate) => normalize(candidate.name) === normalize(player.name),
+      );
+      if (existing >= 0) {
+        const verified = activeFootballers[existing];
+        activeFootballers[existing] = {
+          ...verified,
+          ...player,
+          aliases: verified.aliases,
+          clubs: [...new Set([...verified.clubs, ...player.clubs])],
+          leagues: [...new Set([...verified.leagues, ...player.leagues])],
+          trophies: verified.trophies,
+        };
+      } else {
+        activeFootballers = [...activeFootballers, player];
+      }
+    }
+    return players.slice(0, limit);
+  } catch {
+    return null;
+  }
+}
+
 export function searchFootballers(search = "", limit = 8) {
   const query = normalize(search);
-  const players = FOOTBALLERS
+  const players = activeFootballers
     .map((player) => {
       const normalizedName = normalize(player.name);
       const normalizedAliases = player.aliases.map(normalize);
@@ -262,15 +364,13 @@ export function searchFootballers(search = "", limit = 8) {
     .map(({ player }) => ({
       id: normalize(player.name),
       name: player.name,
-      imageUrl: playerImageUrl(player.name),
+      imageUrl: player.imageUrl ?? playerImageUrl(player.name),
       aliases: player.aliases,
     }));
 
   return {
     players,
-    updatedAt: FOOTBALL_DATA_UPDATED_AT,
-    source: "Penalty Grid verified roster snapshot",
-    freshness: footballDataFreshness(),
+    ...getFootballDataState(),
   };
 }
 
@@ -278,7 +378,7 @@ export function resolveFootballer(answer: string): Footballer | null {
   const normalized = normalize(answer);
   if (!normalized) return null;
   return (
-    FOOTBALLERS.find(
+    activeFootballers.find(
       (player) =>
         normalize(player.name) === normalized ||
         player.aliases.some((alias) => normalize(alias) === normalized),

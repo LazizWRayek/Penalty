@@ -271,7 +271,7 @@ components:
           type: string
         freshness:
           type: string
-          enum: [verified-snapshot, stale, unavailable]
+          enum: [live, verified-snapshot, stale, unavailable]
       required: [players, updatedAt, source, freshness]
     RoomSession:
       type: object

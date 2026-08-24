@@ -8,6 +8,7 @@ import {
   satisfies,
   validateAnswer,
 } from "./football";
+import { mergeLivePlayer, newLivePlayer } from "./football-provider";
 
 describe("football answer validation", () => {
   it("resolves aliases and validates both grid criteria", () => {
@@ -58,5 +59,40 @@ describe("football answer validation", () => {
   it("labels an out-of-date roster snapshot as stale", () => {
     const staleDate = Date.parse(FOOTBALL_DATA_UPDATED_AT) + 31 * 24 * 60 * 60 * 1000;
     expect(footballDataFreshness(staleDate)).toBe("stale");
+  });
+
+  it("merges live profiles without losing audited historical criteria", () => {
+    const fallback = FOOTBALLERS.find((player) => player.name === "Cristiano Ronaldo");
+    if (!fallback) throw new Error("Missing test player");
+    const merged = mergeLivePlayer(fallback, {
+      player: {
+        name: "Cristiano Ronaldo",
+        nationality: "Portugal",
+        photo: "https://example.test/ronaldo.jpg",
+      },
+      statistics: [{
+        team: { name: "Al-Nassr" },
+        league: { name: "Saudi Pro League" },
+      }],
+    });
+
+    expect(merged.clubs).toEqual(expect.arrayContaining(["Manchester United", "Al-Nassr"]));
+    expect(merged.leagues).toEqual(expect.arrayContaining(["Premier League", "Saudi Pro League"]));
+    expect(merged.trophies).toEqual(fallback.trophies);
+    expect(merged.imageUrl).toBe("https://example.test/ronaldo.jpg");
+  });
+
+  it("converts a discovered live player into a searchable roster entry", () => {
+    const player = newLivePlayer({
+      player: { name: "Live Player", nationality: "Argentine", photo: "https://example.test/live.jpg" },
+      statistics: [{ team: { name: "Liverpool" }, league: { name: "Premier League" } }],
+    });
+    expect(player).toMatchObject({
+      name: "Live Player",
+      nationality: "Argentine",
+      clubs: ["Liverpool"],
+      leagues: ["Premier League"],
+      imageUrl: "https://example.test/live.jpg",
+    });
   });
 });

@@ -4,7 +4,7 @@ import { WebSocketServer, type WebSocket } from "ws";
 import {
   CRITERIA,
   type CriterionId,
-  FOOTBALLERS,
+  getFootballerCount,
   validateAnswer,
 } from "./football";
 import { logger } from "./logger";
@@ -194,7 +194,7 @@ function stateFor(room: Room, viewerId: string) {
     room: roomSnapshot(room),
     game: publicGame(room, viewerId),
     serverTime: Date.now(),
-    availablePlayers: FOOTBALLERS.length,
+    availablePlayers: getFootballerCount(),
   };
 }
 

@@ -10,6 +10,7 @@ export type PlayerSearchResponseFreshness = typeof PlayerSearchResponseFreshness
 
 
 export const PlayerSearchResponseFreshness = {
+  live: 'live',
   'verified-snapshot': 'verified-snapshot',
   stale: 'stale',
   unavailable: 'unavailable',
