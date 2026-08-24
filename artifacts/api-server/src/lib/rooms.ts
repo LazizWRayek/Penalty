@@ -475,7 +475,7 @@ export function getRoom(code: string) {
 
 export function attachRealtime(server: HttpServer) {
   const wss = new WebSocketServer({ noServer: true });
-  server.on("upgrade", (request, socket, head) => {
+  const handleUpgrade = (request: IncomingMessage, socket: import("node:net").Socket, head: Buffer) => {
     const url = new URL(request.url ?? "/", "http://localhost");
     if (url.pathname !== "/ws") {
       socket.destroy();
@@ -493,7 +493,8 @@ export function attachRealtime(server: HttpServer) {
     wss.handleUpgrade(request, socket, head, (ws) => {
       wss.emit("connection", ws, request, room, playerId);
     });
-  });
+  };
+  server.on("upgrade", handleUpgrade);
 
   wss.on("connection", (ws: WebSocket, _request: IncomingMessage, room: Room, playerId: string) => {
     const player = room.players.get(playerId);
@@ -520,7 +521,7 @@ export function attachRealtime(server: HttpServer) {
     });
   });
 
-  setInterval(() => {
+  const expiryTimer = setInterval(() => {
     for (const room of rooms.values()) {
       if (room.status === "playing" && room.game?.deadline && Date.now() > room.game.deadline) {
         const game = room.game;
@@ -535,4 +536,13 @@ export function attachRealtime(server: HttpServer) {
       }
     }
   }, 500);
+
+  return () => {
+    clearInterval(expiryTimer);
+    server.off("upgrade", handleUpgrade);
+    for (const room of rooms.values()) {
+      if (room.advanceTimer) clearTimeout(room.advanceTimer);
+    }
+    wss.close();
+  };
 }
