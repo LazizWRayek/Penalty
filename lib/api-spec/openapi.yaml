@@ -3,20 +3,21 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Authoritative room and match APIs for Penalty Grid.
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: rooms
+    description: Penalty Grid room operations
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,7 +25,94 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /rooms:
+    post:
+      operationId: createRoom
+      tags: [rooms]
+      summary: Create a private game room
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRoomInput"
+      responses:
+        "201":
+          description: Created room and host session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoomSession"
+        "400":
+          description: Invalid room settings
+  /rooms/{code}:
+    get:
+      operationId: getRoom
+      tags: [rooms]
+      summary: Get a room lobby snapshot
+      parameters:
+        - $ref: "#/components/parameters/RoomCode"
+      responses:
+        "200":
+          description: Room snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoomSnapshot"
+        "404":
+          description: Room not found
+  /rooms/{code}/join:
+    post:
+      operationId: joinRoom
+      tags: [rooms]
+      summary: Join a private game room
+      parameters:
+        - $ref: "#/components/parameters/RoomCode"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JoinRoomInput"
+      responses:
+        "200":
+          description: Joined room and player session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoomSession"
+        "400":
+          description: Invalid display name or room is full
+        "404":
+          description: Room not found
+  /rooms/quick-play:
+    post:
+      operationId: quickPlay
+      tags: [rooms]
+      summary: Create a quick-play room and host session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuickPlayInput"
+      responses:
+        "201":
+          description: Created quick-play room and host session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoomSession"
 components:
+  parameters:
+    RoomCode:
+      name: code
+      in: path
+      required: true
+      description: Four-character room code
+      schema:
+        type: string
+        pattern: "^[A-Z0-9]{4}$"
   schemas:
     HealthStatus:
       type: object
@@ -33,4 +121,102 @@ components:
           type: string
       required:
         - status
-
+    CreateRoomInput:
+      type: object
+      properties:
+        displayName:
+          type: string
+          minLength: 2
+          maxLength: 18
+        avatar:
+          type: string
+          maxLength: 2
+        mode:
+          type: string
+          enum: [classic, party]
+        matchLength:
+          type: number
+          enum: [3, 5, 7]
+        difficulty:
+          type: string
+          enum: [casual, competitive, hardcore]
+      required:
+        - displayName
+    JoinRoomInput:
+      type: object
+      properties:
+        displayName:
+          type: string
+          minLength: 2
+          maxLength: 18
+        avatar:
+          type: string
+          maxLength: 2
+      required:
+        - displayName
+    QuickPlayInput:
+      type: object
+      properties:
+        displayName:
+          type: string
+          minLength: 2
+          maxLength: 18
+        avatar:
+          type: string
+          maxLength: 2
+      required:
+        - displayName
+    PlayerSnapshot:
+      type: object
+      properties:
+        id:
+          type: string
+        displayName:
+          type: string
+        avatar:
+          type: string
+        team:
+          type: string
+          enum: [home, away, neutral]
+        ready:
+          type: boolean
+        connected:
+          type: boolean
+        score:
+          type: number
+      required: [id, displayName, avatar, team, ready, connected, score]
+    RoomSnapshot:
+      type: object
+      properties:
+        code:
+          type: string
+        hostId:
+          type: string
+        status:
+          type: string
+          enum: [lobby, playing, finished]
+        mode:
+          type: string
+          enum: [classic, party]
+        matchLength:
+          type: number
+        difficulty:
+          type: string
+          enum: [casual, competitive, hardcore]
+        players:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlayerSnapshot"
+      required: [code, hostId, status, mode, matchLength, difficulty, players]
+    RoomSession:
+      type: object
+      properties:
+        code:
+          type: string
+        playerId:
+          type: string
+        sessionToken:
+          type: string
+        room:
+          $ref: "#/components/schemas/RoomSnapshot"
+      required: [code, playerId, sessionToken, room]

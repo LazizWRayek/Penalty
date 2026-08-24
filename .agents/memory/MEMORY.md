@@ -1,0 +1,1 @@
+- [Realtime game rooms](realtime-game-rooms.md) — Rooms are intentionally server-authoritative and in memory for the first playable release.

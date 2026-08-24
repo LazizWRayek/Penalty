@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Penalty Grid"
+description = "A cinematic multiplayer football party game where players choose grid squares, name qualifying footballers, predict shots, and battle through penalty shootouts in real time."
+version = "1.0.0"
+id = "artifacts/penalty-grid"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19148
+
+[services.development]
+run = "pnpm --filter @workspace/penalty-grid run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/penalty-grid", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/penalty-grid/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19148"
+BASE_PATH = "/"

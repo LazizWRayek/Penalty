@@ -1,6 +1,6 @@
-# [Project name]
+# Penalty Grid
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Penalty Grid is a real-time football party game where friends use player knowledge to score, predict, and save penalties in shared private rooms.
 
 ## Run & Operate
 
@@ -22,19 +22,26 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/penalty-grid/` — React game client and stadium UI.
+- `artifacts/api-server/src/lib/rooms.ts` — authoritative in-memory rooms, turn progression, timers, and WebSockets.
+- `artifacts/api-server/src/lib/football.ts` — structured football data and answer validation.
+- `lib/api-spec/openapi.yaml` — REST room contract.
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- The API server owns the match state and only reveals player selections when rules allow it.
+- Private rooms use short codes and reconnectable browser sessions; the first release intentionally keeps active rooms in memory.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- Create or join private rooms with a short code.
+- Ready up, start a match, choose a target, predict the shot, and answer football-player criteria.
+- Server validation supports aliases and prevents the goalkeeper reusing the shooter’s answer.
+- Scores, timers, reveals, sudden death, reconnecting state, and rematches are synchronized live.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- Build functional experiences rather than mocks or placeholder flows.
 
 ## Gotchas
 

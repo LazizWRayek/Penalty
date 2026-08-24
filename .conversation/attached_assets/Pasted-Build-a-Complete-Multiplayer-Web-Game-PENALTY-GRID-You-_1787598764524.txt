@@ -1,0 +1,893 @@
+Build a Complete Multiplayer Web Game: PENALTY GRID
+
+You are an elite game designer, senior full-stack engineer, multiplayer systems architect, UI/UX designer, motion designer, and football-game designer.
+
+Your task is to BUILD the game described below as a genuinely playable, polished web application.
+
+Do not create a mockup, prototype, static demo, landing page, or fake multiplayer simulation.
+
+Build the actual game.
+
+The game should feel like a polished modern party game that people could realistically play with friends for hours.
+
+⸻
+
+1. GAME CONCEPT
+
+The game is called PENALTY GRID.
+
+It combines:
+
+* Football penalty shootouts
+* Football player knowledge/trivia
+* A 3×3 grid
+* Prediction
+* Bluffing
+* Risk/reward
+* Fast decision-making
+* Multiplayer competition
+
+The fundamental question of every penalty is:
+
+Can you name a footballer who satisfies BOTH criteria of the square you selected?
+
+The shooter chooses where to shoot.
+
+The goalkeeper chooses where to dive.
+
+Both decisions are hidden until the reveal.
+
+⸻
+
+2. THE 3×3 GRID
+
+Every penalty displays a football goal divided into a 3×3 grid.
+
+There are:
+
+3 horizontal criteria
+
+and
+
+3 vertical criteria.
+
+Every square is therefore the intersection of exactly two criteria.
+
+Example:
+
+	Premier League	La Liga	Serie A
+Argentina	Argentina + Premier League	Argentina + La Liga	Argentina + Serie A
+World Cup Winner	World Cup Winner + Premier League	World Cup Winner + La Liga	World Cup Winner + Serie A
+Played for Liverpool	Liverpool + Premier League	Liverpool + La Liga	Liverpool + Serie A
+
+The player selects one square.
+
+The game then presents the two criteria associated with that square.
+
+The player has a limited amount of time to name a valid footballer satisfying BOTH criteria.
+
+⸻
+
+3. SHOOTING
+
+When it is the player’s turn to shoot:
+
+1. Display the 3×3 goal.
+2. Player chooses one square.
+3. Their selected square becomes locked.
+4. Start a countdown.
+5. Player must provide a footballer’s name.
+6. Validate the answer against the football database.
+
+If the answer is invalid:
+
+MISS
+
+The ball should visibly miss the goal.
+
+If the answer is valid:
+
+The shot is ON TARGET.
+
+The goalkeeper now has a chance to save it.
+
+⸻
+
+4. GOALKEEPER MECHANIC
+
+Before the shooter reveals their answer, the goalkeeper secretly chooses one of the nine squares.
+
+The goalkeeper is predicting where the shooter will shoot.
+
+The goalkeeper’s choice must remain hidden.
+
+After the shooter answers:
+
+CASE A: Goalkeeper chose the WRONG square
+
+The shot automatically becomes a:
+
+GOAL ⚽
+
+Animate the ball entering the goal.
+
+CASE B: Goalkeeper chose the SAME square
+
+The goalkeeper correctly predicted the shot.
+
+However, the goalkeeper is NOT automatically given the save.
+
+The goalkeeper must now name a DIFFERENT footballer who satisfies the SAME TWO criteria.
+
+Example:
+
+Criteria:
+
+Argentina + Serie A
+
+Shooter:
+
+Paulo Dybala
+
+Keeper cannot answer:
+
+Paulo Dybala
+
+They must provide another valid player, for example:
+
+Lautaro Martínez
+
+If the goalkeeper’s answer is valid:
+
+SAVED 🧤
+
+If the goalkeeper’s answer is invalid:
+
+GOAL ⚽
+
+This creates a second layer of football knowledge.
+
+⸻
+
+5. IMPORTANT ANSWER RULES
+
+The shooter and goalkeeper must never be able to use the same footballer for the same penalty.
+
+Answers must be validated against actual football data.
+
+Do NOT rely purely on an AI model to determine whether an answer is valid.
+
+Create a structured football-player database or data layer.
+
+The system should support:
+
+* Player name
+* Alternate/common names
+* Nationality
+* Clubs
+* Club history
+* Competitions
+* International appearances
+* International team
+* Major trophies
+* Relevant attributes needed by the criteria system
+
+The answer validator should handle reasonable variations in player names.
+
+For example:
+
+“CR7” should resolve to Cristiano Ronaldo if appropriate.
+
+But completely ambiguous or incorrect answers must be rejected.
+
+⸻
+
+6. CRITERIA SYSTEM
+
+Create a robust criteria-generation system.
+
+Criteria should be generated from actual football data.
+
+Examples:
+
+Nationality
+
+* Egyptian
+* Brazilian
+* Argentine
+* French
+* Spanish
+* English
+* Italian
+* Portuguese
+
+Clubs
+
+* Played for Liverpool
+* Played for Barcelona
+* Played for Real Madrid
+* Played for Manchester United
+* Played for Arsenal
+* Played for Chelsea
+* Played for Bayern Munich
+* Played for AC Milan
+* Played for Inter
+* Played for Juventus
+
+Competitions / leagues
+
+* Played in Premier League
+* Played in La Liga
+* Played in Serie A
+* Played in Bundesliga
+* Played in Ligue 1
+
+Achievements
+
+* Won the Champions League
+* Won the World Cup
+* Won a domestic league
+* Won the Ballon d’Or
+
+Career properties
+
+* Played for 3+ clubs
+* Played internationally
+* Scored for national team
+* Played in the Champions League
+
+The criteria generator MUST guarantee that each displayed square has at least a reasonable pool of valid answers.
+
+Avoid impossible combinations unless the game is intentionally in HARDCORE mode.
+
+⸻
+
+7. GAME MODES
+
+Implement the following modes.
+
+CLASSIC
+
+Standard penalty shootout.
+
+Two teams compete.
+
+Each side receives an equal number of penalties.
+
+After the scheduled penalties, highest score wins.
+
+If tied:
+
+SUDDEN DEATH.
+
+⸻
+
+PARTY MODE
+
+Designed for 3–10 players.
+
+The game automatically adapts to player count.
+
+2 players
+
+1v1.
+
+One shoots while the other is goalkeeper.
+
+Then swap.
+
+3 players
+
+Two players form one attacking team.
+
+One player is goalkeeper.
+
+Rotate roles throughout the game so nobody is permanently stuck as goalkeeper.
+
+4 players
+
+2v2.
+
+5 players
+
+Two teams plus a rotating neutral goalkeeper.
+
+6 players
+
+3v3.
+
+7 players
+
+3v3 plus rotating goalkeeper.
+
+8 players
+
+4v4.
+
+9 players
+
+4v4 plus rotating goalkeeper.
+
+10 players
+
+5v5.
+
+The team assignment and role system should be automatic.
+
+Display all players clearly so everyone knows:
+
+* Team
+* Current role
+* Turn order
+* Score
+
+⸻
+
+8. MULTIPLAYER
+
+This must be REAL multiplayer.
+
+Players should be able to:
+
+Create Room
+
+Generate a short room code.
+
+Example:
+
+7K4P
+
+Join Room
+
+Enter the room code.
+
+Players choose a display name.
+
+The lobby shows:
+
+* Player names
+* Team assignments
+* Connection status
+* Ready status
+
+Host can:
+
+* Start game
+* Change mode
+* Configure match length
+* Configure difficulty
+
+Use a proper real-time multiplayer architecture.
+
+Preferred technologies:
+
+* React / Next.js
+* TypeScript
+* Node.js
+* WebSockets / Socket.IO
+* Supabase or Firebase where useful
+* PostgreSQL if required
+
+Choose the architecture that provides the most reliable real-time experience.
+
+Do not fake multiplayer with local state.
+
+⸻
+
+9. GAME STATE
+
+Create a robust authoritative game-state system.
+
+The server should control:
+
+* Current round
+* Current shooter
+* Current goalkeeper
+* Current teams
+* Grid criteria
+* Shooter selection
+* Keeper selection
+* Timers
+* Answers
+* Goal/save/miss result
+* Score
+* Turn order
+* Match completion
+
+Clients should receive synchronized state.
+
+Protect the game against:
+
+* Double submissions
+* Late submissions
+* Refreshing the page
+* Players disconnecting
+* Players joining after the match starts
+* Invalid room states
+* Race conditions
+
+⸻
+
+10. UI / VISUAL DESIGN
+
+The game must NOT look like a generic CRUD website.
+
+It should feel like a premium football party game.
+
+Visual direction:
+
+* Dark stadium atmosphere
+* Huge football pitch/goal imagery
+* Floodlights
+* Crowd silhouettes
+* Subtle stadium particles
+* High contrast
+* Modern sports typography
+* Dramatic animations
+* Smooth transitions
+* Responsive design
+
+The goal should visually dominate the screen.
+
+The 3×3 grid must be immediately understandable.
+
+Each square should have:
+
+* Clear criteria
+* Hover state
+* Selected state
+* Locked state
+* Animated reveal state
+
+⸻
+
+11. PENALTY ANIMATION
+
+The penalty itself should feel cinematic.
+
+Sequence:
+
+BEFORE SHOT
+
+Camera/stadium ambience.
+
+Shooter walks toward the ball.
+
+Goalkeeper moves into position.
+
+Grid appears.
+
+Countdown begins.
+
+SELECTION
+
+Shooter selects square.
+
+Keeper secretly selects square.
+
+Both selections remain hidden.
+
+ANSWER
+
+Shooter’s criteria appear prominently.
+
+Timer counts down.
+
+Player enters answer.
+
+REVEAL
+
+Dramatic pause.
+
+Reveal shooter answer.
+
+Show whether it is valid.
+
+Then reveal goalkeeper’s selected square.
+
+If wrong:
+
+WRONG DIRECTION
+
+Then:
+
+GOAL
+
+If correct:
+
+CORRECT DIVE
+
+Then goalkeeper receives the save challenge.
+
+SAVE CHALLENGE
+
+Keeper must produce another valid footballer.
+
+Countdown.
+
+Reveal answer.
+
+Then:
+
+SAVED
+
+or
+
+GOAL
+
+Make these moments satisfying and dramatic.
+
+⸻
+
+12. SOUND DESIGN
+
+Add sound effects where appropriate.
+
+Examples:
+
+* Crowd ambience
+* Countdown ticks
+* Selection sound
+* Ball kick
+* Net impact
+* Save
+* Miss
+* Goal celebration
+* Crowd roar
+* Dramatic tension during reveal
+
+Allow players to mute sound.
+
+Do not use copyrighted music without permission.
+
+⸻
+
+13. MOBILE FIRST
+
+This game must work beautifully on:
+
+* iPhone
+* Android
+* Tablets
+* Desktop
+* Laptop
+
+Touch controls must be excellent.
+
+The 3×3 goal should be easy to interact with using a phone.
+
+Do not simply shrink the desktop UI.
+
+Design the mobile experience intentionally.
+
+⸻
+
+14. GAME FEEL
+
+The game should create moments like:
+
+“NO WAY YOU PICKED THAT!”
+
+“THAT PLAYER COUNTS!”
+
+“HE KNEW I WAS GOING THERE!”
+
+“YOU HAD ONE JOB!”
+
+“WHAT A SAVE!”
+
+The system should maximize tension and social interaction.
+
+⸻
+
+15. LOBBY
+
+Create a beautiful lobby.
+
+Show:
+
+PENALTY GRID
+
+CREATE ROOM
+
+JOIN ROOM
+
+QUICK PLAY
+
+Players joining a room appear as animated player cards.
+
+Each player can choose:
+
+* Display name
+* Avatar
+* Country/flag
+* Cosmetic goalkeeper/shooter style later
+
+Do not require account creation for the basic private-room experience.
+
+A player should be able to:
+
+1. Open website
+2. Create room
+3. Send code/link to friends
+4. Friends join
+5. Start playing
+
+as quickly as possible.
+
+⸻
+
+16. SCOREBOARD
+
+During matches show:
+
+* Team names
+* Player names
+* Current score
+* Penalties taken
+* Goals
+* Saves
+* Misses
+* Current shooter
+* Current goalkeeper
+
+Do not overload the screen.
+
+Prioritize the information relevant to the current penalty.
+
+⸻
+
+17. END SCREEN
+
+After the match:
+
+Show a dramatic result screen.
+
+Examples:
+
+VICTORY 🏆
+
+or
+
+DEFEAT
+
+Display:
+
+* Final score
+* Goals
+* Saves
+* Misses
+* Best player
+* Most successful answers
+* Biggest save
+* Longest streak
+
+Then:
+
+REMATCH
+
+NEW GAME
+
+COPY ROOM CODE
+
+⸻
+
+18. STATS
+
+Track player statistics locally and/or through an account system later.
+
+Possible statistics:
+
+* Games played
+* Games won
+* Goals
+* Saves
+* Misses
+* Successful answers
+* Failed answers
+* Penalty success rate
+* Save rate
+* Favorite criteria
+* Longest win streak
+
+⸻
+
+19. ANTI-CHEAT / FAIRNESS
+
+The game should prevent players from inspecting hidden selections through the client.
+
+Do not send secret goalkeeper selections to the browser before the reveal.
+
+Do not trust client-side scoring.
+
+The server must determine:
+
+* Whether an answer is valid
+* Whether a square was selected
+* Whether the goalkeeper predicted correctly
+* Whether the result is a goal/save/miss
+
+⸻
+
+20. ACCESSIBILITY
+
+Include:
+
+* Keyboard navigation
+* Clear text contrast
+* Screen-reader-friendly controls where practical
+* Color should never be the only indicator
+* Adjustable sound
+* Reduced-motion option
+
+⸻
+
+21. ERROR HANDLING
+
+Handle gracefully:
+
+* Network disconnect
+* Player leaves
+* Browser refresh
+* Server error
+* Invalid room code
+* Room expired
+* Invalid answer
+* Timeout
+* Duplicate submission
+
+Never leave players staring at a frozen screen.
+
+Provide clear recovery actions.
+
+⸻
+
+22. DEVELOPMENT PRIORITY
+
+Build in this order:
+
+PHASE 1
+
+Core game engine.
+
+PHASE 2
+
+Football data and answer validation.
+
+PHASE 3
+
+Multiplayer rooms.
+
+PHASE 4
+
+Complete 2–10 player role/team system.
+
+PHASE 5
+
+Professional UI.
+
+PHASE 6
+
+Animations and game feel.
+
+PHASE 7
+
+Sound.
+
+PHASE 8
+
+Statistics and polish.
+
+Do not spend most of the development time making a beautiful homepage while the actual game is broken.
+
+⸻
+
+23. CRITICAL REQUIREMENT
+
+The game must be FULLY PLAYABLE.
+
+Do not leave:
+
+* TODO placeholders
+* fake buttons
+* simulated multiplayer
+* hardcoded fake answers
+* unfinished screens
+* “coming soon” functionality
+* nonfunctional room codes
+* placeholder game logic
+
+If a sophisticated feature cannot be completed immediately, implement the simplest REAL version of it rather than pretending it works.
+
+⸻
+
+24. TESTING
+
+Create tests for the critical game logic.
+
+Test:
+
+* Valid answers
+* Invalid answers
+* Duplicate answers
+* Shooter selection
+* Keeper selection
+* Correct dive
+* Incorrect dive
+* Save challenge
+* Timeout
+* Goal
+* Miss
+* Team assignment
+* Odd player counts
+* Even player counts
+* Room creation
+* Room joining
+* Player disconnect
+* Match completion
+* Sudden death
+
+The game engine should be deterministic and testable independently from the UI.
+
+⸻
+
+25. DESIGN PHILOSOPHY
+
+Do not build this like a trivia website.
+
+Build it like a football spectacle that happens to use trivia as its combat system.
+
+The player should constantly feel:
+
+“I know football.”
+
+followed immediately by:
+
+“Wait… DO I know football?”
+
+The game should be extremely easy to understand within 30 seconds but have enough depth that experienced football fans keep getting better.
+
+⸻
+
+26. IMPORTANT: DO NOT OVERCOMPLICATE THE FIRST RELEASE
+
+The first playable release must nail these five things:
+
+1. Selecting a square.
+2. Naming a valid footballer.
+3. Predicting the shot.
+4. Saving or scoring.
+5. Playing with friends in real time.
+
+Everything else is secondary.
+
+Build those mechanics first and make them feel fantastic.
+
+⸻
+
+27. FINAL PRODUCT STANDARD
+
+When finished, the result should feel like a real game that could be shared on:
+
+* TikTok
+* Instagram
+* Discord
+* WhatsApp
+* Twitch
+* YouTube
+
+A friend should be able to send another friend a room link and say:
+
+“Join. Let’s see if you actually know ball.”
+
+That sentence should be enough to make someone want to play.
+
+Build PENALTY GRID as if it is intended to become a major multiplayer football party game, not as a coding exercise.
+
+Start by inspecting the existing project structure and dependencies.
+
+Then implement the game systematically.
+
+Do not stop at explaining what should be built.
+
+BUILD IT.
